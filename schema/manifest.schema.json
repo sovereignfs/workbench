@@ -1,0 +1,164 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://unpkg.com/@sovereignfs/workbench@0/schema/manifest.schema.json",
+  "title": "workbench.manifest.json",
+  "description": "Manifest for @sovereignfs/workbench (wb): the repos in a workbench and how to work with them.",
+  "type": "object",
+  "required": ["repos"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": {
+      "description": "Manifest format version. Defaults to 1.",
+      "const": 1
+    },
+    "name": {
+      "description": "A display name for this workbench.",
+      "type": "string"
+    },
+    "defaults": {
+      "description": "Settings every repo inherits unless it sets its own.",
+      "$ref": "#/$defs/repoSettings"
+    },
+    "pods": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "dir": {
+          "description": "Where pods are created, relative to the workbench root.",
+          "type": "string",
+          "default": "pods"
+        },
+        "portBase": {
+          "description": "First port of pod 1's port block.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535,
+          "default": 5000
+        },
+        "blockSize": {
+          "description": "Ports reserved per pod. Pod n's block starts at portBase + (n - 1) * blockSize.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000,
+          "default": 10
+        }
+      }
+    },
+    "killPort": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "defaults": {
+          "description": "Ports or ranges `wb kill-port` targets when given none.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/portSpec" },
+          "default": ["3000-3999", "4000-4999", "5000-5999"]
+        }
+      }
+    },
+    "repos": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/repo" }
+    }
+  },
+  "$defs": {
+    "name": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._-]+$",
+      "not": { "enum": [".", ".."] }
+    },
+    "relPath": {
+      "description": "A path relative to the workbench root, without '..'.",
+      "type": "string",
+      "minLength": 1,
+      "not": { "pattern": "(^/|^[A-Za-z]:|(^|[\\\\/])\\.\\.([\\\\/]|$))" }
+    },
+    "portSpec": {
+      "type": "string",
+      "pattern": "^\\d+(-\\d+)?$"
+    },
+    "repoSettings": {
+      "type": "object",
+      "properties": {
+        "branch": {
+          "description": "The branch pull and clear keep up to date. Default: main.",
+          "type": "string",
+          "pattern": "^(?!-)[A-Za-z0-9._/-]+$"
+        },
+        "install": {
+          "description": "How `wb pod create` installs dependencies: \"auto\" (from the lockfile; the default), a package manager (runs \"<pm> install\" when there's a package.json), false (never), or a command as an argv array.",
+          "oneOf": [
+            { "enum": ["auto", "pnpm", "npm", "yarn", "bun", false] },
+            {
+              "type": "array",
+              "minItems": 1,
+              "items": { "type": "string" },
+              "prefixItems": [{ "type": "string", "minLength": 1, "not": { "pattern": "^-" } }]
+            }
+          ]
+        },
+        "carry": {
+          "description": "Untracked files copied from the main checkout into pods and across `pull --reset`. Default: [\".env\"].",
+          "type": "array",
+          "items": { "$ref": "#/$defs/relPath" }
+        }
+      }
+    },
+    "repo": {
+      "type": "object",
+      "required": ["id", "url", "path"],
+      "allOf": [{ "$ref": "#/$defs/repoSettings" }],
+      "properties": {
+        "id": { "$ref": "#/$defs/name" },
+        "url": {
+          "description": "Clone URL. SSH URLs are rewritten to HTTPS with --https.",
+          "type": "string",
+          "minLength": 1,
+          "not": { "pattern": "^-" }
+        },
+        "path": {
+          "description": "Where the main checkout lives, relative to the workbench root. Unique; repos are addressed by it.",
+          "$ref": "#/$defs/relPath"
+        },
+        "type": {
+          "description": "Free-form label (e.g. app, lib, infra).",
+          "type": "string"
+        },
+        "skip": {
+          "description": "Left out of `wb init`; clone it with `wb pull <path> --reset`.",
+          "type": "boolean"
+        },
+        "legacy": {
+          "description": "Retired: gets no pods and may reuse another entry's id.",
+          "type": "boolean"
+        },
+        "branch": true,
+        "install": true,
+        "carry": true,
+        "pod": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "prefix": {
+              "description": "Pod directory name prefix; pods are <prefix><n>. Default: \"<id>-\". Must not end in a digit.",
+              "allOf": [{ "$ref": "#/$defs/name" }, { "not": { "pattern": "\\d$" } }]
+            },
+            "ports": {
+              "description": "Env vars that get the pod's ports: ports[i] = block start + i. Literal localhost:<default> references are rewritten too.",
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["key"],
+                "additionalProperties": false,
+                "properties": {
+                  "key": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*$" },
+                  "default": { "type": "integer", "minimum": 1, "maximum": 65535 }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

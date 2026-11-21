@@ -1,10 +1,49 @@
 {
-  "name": "@sovereignfs/workbench-cli",
+  "name": "@sovereignfs/workbench",
   "version": "0.1.0",
-  "private": true,
-  "description": "CLI for bootstrapping and managing the sovereignfs dev workbench",
+  "description": "A manifest-driven multi-repo workbench: clone and update a set of repos in one step, and spin up isolated pods for parallel (AI agent) work.",
   "type": "module",
   "bin": {
+    "wb": "bin/workbench.js",
     "workbench": "bin/workbench.js"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    "./schema/manifest.schema.json": "./schema/manifest.schema.json"
+  },
+  "files": [
+    "bin",
+    "src",
+    "schema",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "check": "node scripts/check.js",
+    "test": "node --test test/*.test.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "workbench",
+    "multi-repo",
+    "monorepo",
+    "polyrepo",
+    "manifest",
+    "git",
+    "worktree",
+    "cli",
+    "ai-agents"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sovereignfs/workbench.git"
+  },
+  "homepage": "https://github.com/sovereignfs/workbench#readme",
+  "bugs": "https://github.com/sovereignfs/workbench/issues",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
   }
 }
